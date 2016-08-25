@@ -219,7 +219,7 @@ neverallow { domain -system_server } security_file:lnk_file { create setattr unl
 # init starts in kernel domain and switches to init domain via setcon in
 # the init.rc, so the setenforce occurs while still in kernel. After
 # switching domains, there is never any need to setenforce again by init.
-neverallow * kernel:security setenforce;
+neverallow ~recovery kernel:security setenforce;
 neverallow { domain -kernel } kernel:security setcheckreqprot;
 
 # No booleans in AOSP policy, so no need to ever set them.
@@ -231,7 +231,7 @@ neverallow * kernel:security setbool;
 neverallow { domain -init } kernel:security setsecparam;
 
 # Only init, ueventd and system_server should be able to access HW RNG
-neverallow { domain -init -system_server -ueventd } hw_random_device:chr_file *;
+neverallow { domain -init -system_server -ueventd -qrngd } hw_random_device:chr_file *;
 
 # Ensure that all entrypoint executables are in exec_type or postinstall_file.
 neverallow * { file_type -exec_type -postinstall_file }:file entrypoint;
@@ -276,6 +276,7 @@ neverallow {
     -appdomain
     -autoplay_app
     -dumpstate
+    -mediaserver
     -shell
     userdebug_or_eng(`-su')
     -system_server
@@ -340,7 +341,7 @@ neverallow * default_android_service:service_manager add;
 
 # Require that domains explicitly label unknown properties, and do not allow
 # anyone but init to modify unknown properties.
-neverallow { domain -init } default_prop:property_service set;
+neverallow { domain -init -nvimport -mediaserver -toolbox -updatemiscta -platform_app -system_app -chargemon } default_prop:property_service set;
 neverallow { domain -init } mmc_prop:property_service set;
 
 neverallow { domain -init -recovery -system_server } frp_block_device:blk_file rw_file_perms;
@@ -418,17 +419,40 @@ neverallow * *:{ shm sem msg msgq } *;
 # Feature parity with Chromium LSM.
 neverallow * { file_type fs_type dev_type }:{ lnk_file fifo_file sock_file } mounton;
 
-# Nobody should be able to execute su on user builds.
-# On userdebug/eng builds, only dumpstate, shell, and
-# su itself execute su.
-neverallow { domain userdebug_or_eng(`-dumpstate -shell -su') } su_exec:file no_x_file_perms;
-
 # Do not allow the introduction of new execmod rules. Text relocations
 # and modification of executable pages are unsafe.
 # The only exceptions are for NDK text relocations associated with
 # https://code.google.com/p/android/issues/detail?id=23203
 # which, long term, need to go away.
-neverallow * {
+neverallow ~ {
+  atfwd
+  bridge
+  cal_data_manager
+  chargemon
+  fast-dormancy
+  iddd
+  init
+  init_shell
+  mediaserver
+  mpdecision
+  netmgrd
+  nfc
+  nvimport
+  ppd
+  qmux
+  qosmgrd
+  qrngd
+  rild
+  rmt
+  secchand
+  setssflagbc
+  system_server
+  ta_rmt_service
+  tad
+  touchd
+  updatemiscta
+  usbeng }
+  {
   file_type
   -system_data_file
   -apk_data_file
@@ -443,7 +467,36 @@ neverallow * self:process { execstack execheap };
 
 # prohibit non-zygote spawned processes from using shared libraries
 # with text relocations. b/20013628 .
-neverallow { domain -appdomain } file_type:file execmod;
+neverallow { domain
+  -appdomain
+  -atfwd
+  -bridge
+  -cal_data_manager
+  -chargemon
+  -fast-dormancy
+  -iddd
+  -init
+  -init_shell
+  -mediaserver
+  -mpdecision
+  -netmgrd
+  -nfc
+  -nvimport
+  -ppd
+  -qmux
+  -qosmgrd
+  -qrngd
+  -rild
+  -rmt
+  -secchand
+  -setssflagbc
+  -system_server
+  -ta_rmt_service
+  -tad
+  -touchd
+  -updatemiscta
+  -usbeng }
+  file_type:file execmod;
 
 neverallow { domain -init } proc:{ file dir } mounton;
 
@@ -469,6 +522,7 @@ neverallow {
   -system_app
   -init
   -installd # for relabelfrom and unlink, check for this in explicit neverallow
+  -cal_data_manager # to write cal.bin
 } system_data_file:file no_w_file_perms;
 # do not grant anything greater than r_file_perms and relabelfrom unlink
 # to installd
@@ -529,6 +583,8 @@ neverallow {
   -dumpstate
   -init
   -installd
+  -mediaserver
+  -surfaceflinger
   -system_server # why?
   userdebug_or_eng(`-uncrypt')
 } shell_data_file:dir { open search };
@@ -541,6 +597,7 @@ neverallow {
   -appdomain
   -dumpstate
   -installd
+  -surfaceflinger
   userdebug_or_eng(`-uncrypt')
 } shell_data_file:file open;
 
