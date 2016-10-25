@@ -426,6 +426,7 @@ neverallow * { file_type fs_type dev_type }:{ lnk_file fifo_file sock_file } mou
 # which, long term, need to go away.
 neverallow ~ {
   atfwd
+  audioserver
   bridge
   cal_data_manager
   chargemon
@@ -446,6 +447,7 @@ neverallow ~ {
   rmt
   secchand
   setssflagbc
+  suntrold
   system_server
   ta_rmt_service
   tad
@@ -470,6 +472,7 @@ neverallow * self:process { execstack execheap };
 neverallow { domain
   -appdomain
   -atfwd
+  -audioserver
   -bridge
   -cal_data_manager
   -chargemon
@@ -490,6 +493,7 @@ neverallow { domain
   -rmt
   -secchand
   -setssflagbc
+  -suntrold
   -system_server
   -ta_rmt_service
   -tad
