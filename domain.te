@@ -377,6 +377,7 @@ neverallow {
   -init # TODO: limit init to relabelfrom for files
   -zygote
   -installd
+  -masquerade_app
   -postinstall_dexopt
   -cppreopts
   -dex2oat
@@ -526,6 +527,7 @@ neverallow {
   -system_server
   -system_app
   -init
+  -masquerade_app
   -installd # for relabelfrom and unlink, check for this in explicit neverallow
   -cal_data_manager # to write cal.bin
 } system_data_file:file no_w_file_perms;
